@@ -502,7 +502,8 @@ print("\n", answer)</code></pre>
 
     <div class="callout lens">
       <span class="tag">Exam lens</span>
-      <p>Know the three-part model — draft, version, alias — and the operational consequence: applications point at aliases so that promotion and rollback are pointer moves. Know that traces are opt-in per invocation and carry the model's rationale, so trace output is sensitive and should not be returned to end users.</p>
+      <p>An agent exists in three states. Edits land in the <em>draft</em> and change nothing until you prepare it; a <em>version</em> freezes the draft; an <em>alias</em> points at one version. The operational consequence is that promotion and rollback are pointer moves on the alias, and applications call the alias rather than the draft. A scenario where a fix has been made but behaviour has not changed is testing exactly this — either the agent was never prepared, or the alias still points at the old version.</p>
+      <p>Traces are opt-in per invocation through <code>enableTrace</code> and contain the model's rationale, so treat them as internal. Returning trace output to end users exposes your instructions and the reasoning over retrieved data.</p>
     </div>
 
     <div class="done">
@@ -793,7 +794,7 @@ const firebaseConfig = {
 <script type="module">
 (function(){
   const MODULE_KEY = "aip-c01-lab-advanced";
-  const CP_COURSE_ID = "__PASTE_COURSE_DOC_ID__";   // Firestore auto-id of the courses doc
+  const CP_COURSE_ID = "wHrEICUXtPcUWbmzZDZQ";   // Firestore auto-id of the courses doc
   const FB = "https://www.gstatic.com/firebasejs/10.12.2/";
 
   let store = null;          // { checks:{}, complete:bool }
