@@ -232,7 +232,8 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:18px;
 
     <div class="callout lens">
       <span class="tag">Exam lens</span>
-      <p>A recurring question shape: a call that works in one region throws <code>AccessDeniedException</code> or <code>ValidationException</code> in another. The three causes to rank in order — model access not enabled in that region, the model requiring an inference profile rather than a bare model ID, and an IAM policy that names the model but not the profile.</p>
+      <p>A call that works in one region and fails in another is a recurring question shape. Check three things, in this order. Model access is granted per account and per region, so it may simply not be enabled here. Some models cannot be called by bare model ID in a given region and must go through an inference profile, which surfaces as <code>ValidationException</code>. An IAM policy that names the model but not the profile ARN is denied even though the model is enabled, which surfaces as <code>AccessDeniedException</code>.</p>
+      <p>The error type narrows it for you: a validation error points at the request, an access denied points at the policy.</p>
     </div>
 
     <div class="done">
@@ -290,7 +291,8 @@ if __name__ == "__main__":
 
     <div class="callout lens">
       <span class="tag">Exam lens</span>
-      <p>Know the difference between <code>temperature</code>, <code>topP</code> and <code>topK</code>, and know that for extraction and classification the correct answer is nearly always the lowest-variance setting. Also know that "the model returned prose around my JSON" is a prompt problem, not a parameter problem.</p>
+      <p>Three controls shape sampling and they are not interchangeable. <code>temperature</code> flattens or sharpens the probability distribution over next tokens; <code>topP</code> truncates the candidate pool by cumulative probability; <code>topK</code> truncates it by count. In Converse, <code>temperature</code>, <code>topP</code>, <code>maxTokens</code> and <code>stopSequences</code> go in <code>inferenceConfig</code>, but <code>topK</code> does not — it goes in <code>additionalModelRequestFields</code>, and only for models that accept it. A question describing a <code>ValidationException</code> after adding <code>topK</code> is testing that placement, not tuning.</p>
+      <p>Scenario questions state a requirement and expect you to move in the right direction: consistent extraction of invoice fields or ticket labels means driving variance down, which is why this lab uses <code>temperature: 0</code>; varied marketing copy means the opposite. Watch for the distractor offering a parameter change as the fix for malformed output — if the model wraps its JSON in prose, no sampling setting corrects that, and the answer is a stricter prompt, a stop sequence, or tool use with a schema.</p>
     </div>
 
     <div class="done">
@@ -341,7 +343,8 @@ if __name__ == "__main__":
 
     <div class="callout lens">
       <span class="tag">Exam lens</span>
-      <p>Expect scenarios that mix identity policies with condition keys: restricting invocation by tag with <code>aws:RequestTag</code>, forcing calls through a VPC endpoint with <code>aws:SourceVpce</code>, or scoping a role to one team's application inference profile. The pattern to recognise is that Bedrock authorisation happens on the <em>routing target</em>, not just the model family.</p>
+      <p>Bedrock authorises against the <em>routing target</em>, not the model family, and most questions in this area turn on that. A role allowed on a foundation model ARN but not on the inference profile it is actually called through is denied — and so is the reverse.</p>
+      <p>Two condition keys recur. <code>aws:ResourceTag</code> scopes a role to one team's tagged application inference profile, which is how per-team access is granted without listing models. <code>aws:SourceVpce</code> on the invoke statement forces traffic through a VPC endpoint, which is the answer whenever a scenario says model calls must not traverse the public internet.</p>
     </div>
 
     <div class="done">
@@ -729,7 +732,7 @@ const firebaseConfig = {
 <script type="module">
 (function(){
   const MODULE_KEY = "aip-c01-lab-basic";
-  const CP_COURSE_ID = "__PASTE_COURSE_DOC_ID__";   // Firestore auto-id of the courses doc
+  const CP_COURSE_ID = "wHrEICUXtPcUWbmzZDZQ";   // Firestore auto-id of the courses doc
   const FB = "https://www.gstatic.com/firebasejs/10.12.2/";
 
   let store = null;          // { checks:{}, complete:bool }
