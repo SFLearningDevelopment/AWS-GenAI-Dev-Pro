@@ -26,6 +26,14 @@ a{color:var(--level);text-decoration-thickness:1px;text-underline-offset:2px}
 .masthead .wrap{padding-top:38px;padding-bottom:30px}
 .crumb{font-family:var(--sans);font-size:13px;color:var(--ink-2);margin:0 0 14px}
 .who{float:right;font-size:12.5px;color:var(--ink-2)}
+.back{color:var(--level);text-decoration:none;font-weight:600}
+.back:hover{text-decoration:underline}
+.nav-bottom{display:flex;justify-content:center;margin:30px 0 0}
+.btn-back{display:inline-block;background:var(--level);color:#fff;text-decoration:none;
+  font-family:var(--sans);font-size:14.5px;font-weight:600;padding:11px 22px;border-radius:8px}
+.btn-back:hover{filter:brightness(1.08)}
+.setup{background:var(--level-soft);border-left:3px solid var(--level)}
+.setup .tag{color:var(--level)}
 .signout{background:none;border:0;color:var(--level);font-size:12.5px;cursor:pointer;text-decoration:underline;font-family:inherit;padding:0}
 .chip{display:inline-block;font-family:var(--sans);font-size:12px;letter-spacing:.02em;
   color:#fff;background:var(--level);border-radius:3px;padding:3px 9px;margin-right:8px}
@@ -97,7 +105,7 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:18px;
 
 <header class="masthead">
   <div class="wrap">
-    <p class="crumb"><span id="who" class="who"></span>SF Knowledge Hub · AWS Certified Generative AI Developer – Professional (AIP-C01) prep</p>
+    <p class="crumb"><span id="who" class="who"></span><a class="back" href="index.html?v=2026090104">← Dashboard</a> · SF Knowledge Hub · AWS Certified Generative AI Developer – Professional (AIP-C01) prep</p>
     <p><span class="chip">Lab 3 · Advanced</span></p>
     <h1>Ship an agent that can act</h1>
     <p class="deck">Give the Lab 2 knowledge base hands: a Bedrock agent with Lambda action groups, a guardrail that checks its answers against retrieved context, traced invocations, batch orchestration, cost controls, and an evaluation you would show a reviewer.</p>
@@ -636,6 +644,8 @@ for kind in {"grounded", "refuse", "action"}:
   <p>Across the three labs you have touched all five domains: model integration, prompt governance and data handling in Lab 1; vector stores, chunking, RAG and multi-tenant retrieval in Lab 2; agents, guardrails, orchestration, cost optimisation and evaluation here.</p>
   <p>What these labs do not cover, and the exam does: model customisation and fine-tuning workflows, VPC and PrivateLink network isolation for Bedrock, cross-region and hybrid deployments, and CI/CD for GenAI applications. Read those in the exam guide, and if you have account budget, rebuild Lab 3's infrastructure as CloudFormation or CDK — deploying an agent from a template teaches the deployment domain faster than reading about it.</p>
 </div>
+
+<div class="nav-bottom"><a class="btn-back" href="index.html?v=2026090104">← Back to dashboard</a></div>
 
 <footer>
   <div>SF Knowledge Hub · AIP-C01 prep lab 3 of 3 · non-gated</div>
