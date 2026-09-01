@@ -28,6 +28,14 @@ a{color:var(--level);text-decoration-thickness:1px;text-underline-offset:2px}
 .masthead .wrap{padding-top:38px;padding-bottom:30px}
 .crumb{font-family:var(--sans);font-size:13px;color:var(--ink-2);margin:0 0 14px}
 .who{float:right;font-size:12.5px;color:var(--ink-2)}
+.back{color:var(--level);text-decoration:none;font-weight:600}
+.back:hover{text-decoration:underline}
+.nav-bottom{display:flex;justify-content:center;margin:30px 0 0}
+.btn-back{display:inline-block;background:var(--level);color:#fff;text-decoration:none;
+  font-family:var(--sans);font-size:14.5px;font-weight:600;padding:11px 22px;border-radius:8px}
+.btn-back:hover{filter:brightness(1.08)}
+.setup{background:var(--level-soft);border-left:3px solid var(--level)}
+.setup .tag{color:var(--level)}
 .signout{background:none;border:0;color:var(--level);font-size:12.5px;cursor:pointer;text-decoration:underline;font-family:inherit;padding:0}
 .chip{display:inline-block;font-family:var(--sans);font-size:12px;letter-spacing:.02em;
   color:#fff;background:var(--level);border-radius:3px;padding:3px 9px;margin-right:8px}
@@ -107,7 +115,7 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:18px;
 
 <header class="masthead">
   <div class="wrap">
-    <p class="crumb"><span id="who" class="who"></span>SF Knowledge Hub · AWS Certified Generative AI Developer – Professional (AIP-C01) prep</p>
+    <p class="crumb"><span id="who" class="who"></span><a class="back" href="index.html?v=2026090104">← Dashboard</a> · SF Knowledge Hub · AWS Certified Generative AI Developer – Professional (AIP-C01) prep</p>
     <p><span class="chip">Lab 1 · Basic</span></p>
     <h1>Invoke and govern a foundation model</h1>
     <p class="deck">Build a support-ticket triage function on Amazon Bedrock, then put the four things around it that a production reviewer will ask for: a scoped IAM role, a versioned prompt, invocation logs, and a guardrail.</p>
@@ -203,6 +211,14 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:18px;
     <dt>Guardrail</dt>
     <dd>A policy object evaluated independently of the model: denied topics, word and content filters, PII detection, and contextual grounding checks. It applies to both the input and the output.</dd>
   </dl>
+
+  <div class="callout setup">
+    <span class="tag">On AWS accounts and credentials</span>
+    <p>Use a personal AWS account for these labs, not a company account. You will be enabling model access, creating IAM roles and deleting resources, none of which belongs in a shared corporate account.</p>
+    <p>Every CLI command in these labs runs in <strong>CloudShell</strong>, which inherits the credentials you signed into the console with. There is nothing to configure and no access keys to create. Open it from the console toolbar, confirm the Region selector reads ap-south-1, and run <code>aws sts get-caller-identity</code> to see which identity you are.</p>
+    <p>Your account's root user can launch CloudShell, but create an IAM user with <code>AdministratorAccess</code> and work as that instead. Signing in as root for daily work is the first thing any AWS review flags.</p>
+    <p>If you would rather work from your own terminal, that is the one case needing setup: create an access key for your IAM user, run <code>aws configure</code>, and set the default region to <code>ap-south-1</code>. Delete the access key when you finish the labs. The Lambda code is unaffected either way, since it runs under an execution role and never under your keys.</p>
+  </div>
 
   <div class="callout verify">
     <span class="tag">Verify before you start</span>
@@ -574,6 +590,8 @@ if resp["stopReason"] == "guardrail_intervened":
   <p>Keep the account, the region, and the model access. Lab 2 builds a knowledge base over your own documents and reuses exactly one idea from here: that the hard part is not the call, it is deciding which identity may touch which resource.</p>
   <p>If any check above is still unticked, tick it before moving on. The intermediate lab assumes a working Converse call and a role you wrote yourself.</p>
 </div>
+
+<div class="nav-bottom"><a class="btn-back" href="index.html?v=2026090104">← Back to dashboard</a></div>
 
 <footer>
   <div>SF Knowledge Hub · AIP-C01 prep lab 1 of 3 · non-gated</div>
