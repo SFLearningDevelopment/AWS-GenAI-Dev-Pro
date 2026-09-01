@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<!-- build: 2026090101 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab 1 — Invoke and govern a foundation model | AIP-C01 prep</title>
+<style>
+:root{
+  --ink:#1B2124; --ink-2:#495259; --rule:#DFE3DE; --paper:#F6F7F5; --panel:#FFFFFF;
+  --level:#17695A; --level-soft:#E8F1EE;
+  --lens:#B0721A; --lens-soft:#FBF4E7;
+  --verify:#41525F; --verify-soft:#EEF2F4;
+  --caution:#9E3025; --caution-soft:#FBEDEB;
+  --serif: Charter,"Bitstream Charter","Iowan Old Style",Georgia,serif;
+  --sans: ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono: ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);
+  font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:820px;margin:0 auto;padding:0 22px 90px}
+a{color:var(--level);text-decoration-thickness:1px;text-underline-offset:2px}
+
+/* header */
+.masthead{border-bottom:1px solid var(--rule);background:var(--panel)}
+.masthead .wrap{padding-top:38px;padding-bottom:30px}
+.crumb{font-family:var(--sans);font-size:13px;color:var(--ink-2);margin:0 0 14px}
+.who{float:right;font-size:12.5px;color:var(--ink-2)}
+.signout{background:none;border:0;color:var(--level);font-size:12.5px;cursor:pointer;text-decoration:underline;font-family:inherit;padding:0}
+.chip{display:inline-block;font-family:var(--sans);font-size:12px;letter-spacing:.02em;
+  color:#fff;background:var(--level);border-radius:3px;padding:3px 9px;margin-right:8px}
+h1{font-family:var(--sans);font-weight:640;font-size:31px;line-height:1.2;margin:0 0 10px;letter-spacing:-.015em}
+.deck{font-size:18px;color:var(--ink-2);margin:0;max-width:62ch}
+.facts{display:flex;flex-wrap:wrap;gap:22px;margin-top:22px;padding-top:18px;border-top:1px solid var(--rule);
+  font-family:var(--sans);font-size:13.5px;color:var(--ink-2)}
+.facts b{display:block;color:var(--ink);font-weight:600}
+
+/* progress */
+.progress{position:sticky;top:0;z-index:20;background:rgba(246,247,245,.94);
+  backdrop-filter:blur(6px);border-bottom:1px solid var(--rule)}
+.progress .wrap{display:flex;align-items:center;gap:14px;padding-top:9px;padding-bottom:9px}
+.bar{flex:1;height:4px;background:var(--rule);border-radius:2px;overflow:hidden}
+.bar span{display:block;height:100%;width:0;background:var(--level);transition:width .25s ease}
+.count{font-family:var(--sans);font-size:12.5px;color:var(--ink-2);white-space:nowrap}
+
+h2{font-family:var(--sans);font-weight:640;font-size:22px;line-height:1.25;margin:0;letter-spacing:-.01em}
+h3{font-family:var(--sans);font-weight:620;font-size:16px;margin:26px 0 8px}
+p{margin:0 0 14px;max-width:70ch}
+ul,ol{max-width:70ch;padding-left:22px}
+li{margin-bottom:7px}
+code{font-family:var(--mono);font-size:.86em;background:#EFF1EE;padding:1px 5px;border-radius:3px}
+pre{font-family:var(--mono);font-size:13px;line-height:1.55;background:#171C1F;color:#E7ECEA;
+  padding:16px 18px;border-radius:5px;overflow-x:auto;margin:0 0 16px}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+.filename{font-family:var(--sans);font-size:12px;color:var(--ink-2);margin:0 0 5px}
+
+section.stage{background:var(--panel);border:1px solid var(--rule);border-radius:6px;
+  padding:26px 28px;margin:26px 0}
+.stage-head{display:flex;gap:16px;align-items:baseline;margin-bottom:6px}
+.num{font-family:var(--mono);font-size:14px;color:var(--level);border:1px solid var(--level);
+  border-radius:50%;width:30px;height:30px;min-width:30px;display:flex;align-items:center;
+  justify-content:center;align-self:flex-start;margin-top:2px}
+.goal{font-family:var(--sans);font-size:14px;color:var(--ink-2);margin:0 0 18px 46px}
+.stage-body{margin-left:46px}
+
+.callout{border-radius:5px;padding:14px 16px;margin:0 0 16px;font-size:15.5px}
+.callout p{margin:0;max-width:64ch}
+.callout p+p{margin-top:9px}
+.callout .tag{font-family:var(--sans);font-size:12.5px;font-weight:640;display:block;margin-bottom:5px}
+.lens{background:var(--lens-soft);border-left:3px solid var(--lens)}
+.lens .tag{color:var(--lens)}
+.verify{background:var(--verify-soft);border-left:3px dashed var(--verify)}
+.verify .tag{color:var(--verify)}
+.caution{background:var(--caution-soft);border-left:3px solid var(--caution)}
+.caution .tag{color:var(--caution)}
+
+.done{background:var(--level-soft);border-radius:5px;padding:14px 16px 8px;margin-top:20px}
+.done .tag{font-family:var(--sans);font-size:12.5px;font-weight:640;color:var(--level);display:block;margin-bottom:8px}
+.done label{display:flex;gap:10px;align-items:flex-start;font-size:15.5px;margin-bottom:8px;cursor:pointer}
+.done input{margin-top:6px;accent-color:var(--level);width:15px;height:15px;flex:none}
+.done label.checked{color:var(--ink-2);text-decoration:line-through;text-decoration-color:var(--rule)}
+
+.orient{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:26px 28px;margin:26px 0}
+figure{margin:0 0 22px}
+figcaption{font-family:var(--sans);font-size:12.5px;color:var(--ink-2);margin-top:8px}
+svg{width:100%;height:auto;display:block}
+dl{margin:0;max-width:70ch}
+dt{font-family:var(--sans);font-weight:620;font-size:15px;margin-top:14px}
+dd{margin:2px 0 0;color:var(--ink-2);font-size:16px}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:0 0 16px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--sans);font-size:13px;font-weight:620}
+footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:18px;
+  font-family:var(--sans);font-size:12.5px;color:var(--ink-2);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+@media (max-width:620px){
+  body{font-size:16px}
+  .stage-body,.goal{margin-left:0}
+  .stage-head{gap:12px}
+  section.stage,.orient{padding:20px 18px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="crumb"><span id="who" class="who"></span>SF Knowledge Hub · AWS Certified Generative AI Developer – Professional (AIP-C01) prep</p>
+    <p><span class="chip">Lab 1 · Basic</span></p>
+    <h1>Invoke and govern a foundation model</h1>
+    <p class="deck">Build a support-ticket triage function on Amazon Bedrock, then put the four things around it that a production reviewer will ask for: a scoped IAM role, a versioned prompt, invocation logs, and a guardrail.</p>
+    <div class="facts">
+      <div><b>Region</b>ap-south-1 (Mumbai)</div>
+      <div><b>Time</b>90–120 minutes</div>
+      <div><b>Cost</b>Under ₹100 if you tear down</div>
+      <div><b>Exam domains</b>1 and 3</div>
+      <div><b>You need</b>AWS account with admin, basic Python</div>
+    </div>
+  </div>
+</header>
+
+<div class="progress"><div class="wrap">
+  <div class="bar"><span id="fill"></span></div>
+  <div class="count" id="count">0 of 0 checks done</div>
+</div></div>
+
+<div class="wrap">
+
+<div class="orient">
+  <h2>Orientation</h2>
+  <p>You are building the triage step of a support pipeline. A ticket arrives, a Lambda function asks a foundation model to classify it (category, urgency, whether it contains customer data), and the structured result goes back to the pipeline.</p>
+  <p>The model call itself is about fifteen lines of code. Everything else in this lab is the part the exam actually tests: which identity is allowed to call which model, where the prompt lives and who can change it, what gets recorded, and what the model is forbidden to say.</p>
+
+  <figure>
+    <svg viewBox="0 0 780 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ticket flows into a Lambda function, which reads a versioned prompt and calls Bedrock through an inference profile with a guardrail attached. Results go to S3. Invocation logs go to CloudWatch Logs and S3.">
+      <defs>
+        <marker id="a1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+          <path d="M0,0 L9,4.5 L0,9 z" fill="#495259"/>
+        </marker>
+        <style>
+          .bx{fill:#FFFFFF;stroke:#DFE3DE;stroke-width:1.5;rx:5}
+          .bxa{fill:#E8F1EE;stroke:#17695A;stroke-width:1.5;rx:5}
+          .t{font-family:ui-sans-serif,'Segoe UI',Roboto,sans-serif;font-size:13px;fill:#1B2124}
+          .s{font-family:ui-sans-serif,'Segoe UI',Roboto,sans-serif;font-size:11px;fill:#495259}
+          .ln{stroke:#495259;stroke-width:1.4;fill:none;marker-end:url(#a1)}
+          .lnd{stroke:#8D979C;stroke-width:1.2;fill:none;stroke-dasharray:4 4;marker-end:url(#a1)}
+        </style>
+      </defs>
+
+      <rect class="bx" x="8" y="112" width="118" height="56"/>
+      <text class="t" x="30" y="136">Support ticket</text>
+      <text class="s" x="30" y="153">JSON event</text>
+
+      <path class="ln" d="M128 140 H182"/>
+
+      <rect class="bxa" x="186" y="96" width="150" height="88"/>
+      <text class="t" x="205" y="126">Lambda</text>
+      <text class="t" x="205" y="144">triage-ticket</text>
+      <text class="s" x="205" y="164">execution role</text>
+
+      <path class="ln" d="M338 140 H400"/>
+
+      <rect class="bxa" x="404" y="70" width="182" height="140"/>
+      <text class="t" x="422" y="98">Amazon Bedrock</text>
+      <text class="s" x="422" y="120">Converse API</text>
+      <text class="s" x="422" y="140">inference profile</text>
+      <text class="s" x="422" y="160">prompt (version 1)</text>
+      <text class="s" x="422" y="180">guardrail</text>
+
+      <path class="ln" d="M588 110 H648"/>
+      <rect class="bx" x="652" y="84" width="120" height="52"/>
+      <text class="t" x="670" y="108">Model</text>
+      <text class="s" x="670" y="125">Nova / Claude</text>
+
+      <path class="ln" d="M588 176 H648"/>
+      <rect class="bx" x="652" y="150" width="120" height="52"/>
+      <text class="t" x="670" y="174">S3</text>
+      <text class="s" x="670" y="191">triage results</text>
+
+      <path class="lnd" d="M495 212 V252 H300"/>
+      <path class="lnd" d="M495 212 V252 H620"/>
+      <rect class="bx" x="176" y="252" width="124" height="40"/>
+      <text class="s" x="192" y="277">CloudWatch Logs</text>
+      <rect class="bx" x="620" y="252" width="128" height="40"/>
+      <text class="s" x="640" y="277">S3 invocation log</text>
+      <text class="s" x="322" y="246">model invocation logging</text>
+    </svg>
+    <figcaption>What you will have running at the end of stage 7. Dashed lines are logging, not request flow.</figcaption>
+  </figure>
+
+  <h3>Glossary</h3>
+  <dl>
+    <dt>Converse API</dt>
+    <dd>Bedrock's model-agnostic chat interface. The same request shape works across providers, so switching models is a config change rather than a rewrite. Prefer it over <code>InvokeModel</code> unless you need a provider-specific field.</dd>
+    <dt>Inference profile</dt>
+    <dd>A routing target that stands in for a model. A <em>system-defined</em> (cross-region) profile such as <code>apac.*</code> spreads calls across several regions for throughput. An <em>application</em> inference profile wraps a model with your own cost-allocation tags. Both have their own ARN, and that ARN is what your IAM policy names.</dd>
+    <dt>Prompt Management</dt>
+    <dd>A Bedrock feature that stores prompts as versioned resources with variables. The prompt gets an ARN, so changing wording becomes a reviewable, auditable action instead of a code deploy.</dd>
+    <dt>Model invocation logging</dt>
+    <dd>An account-and-region-level Bedrock setting that writes request and response metadata (optionally full bodies) to CloudWatch Logs, S3, or both. Off by default.</dd>
+    <dt>Guardrail</dt>
+    <dd>A policy object evaluated independently of the model: denied topics, word and content filters, PII detection, and contextual grounding checks. It applies to both the input and the output.</dd>
+  </dl>
+
+  <div class="callout verify">
+    <span class="tag">Verify before you start</span>
+    <p>Model availability and inference-profile IDs in ap-south-1 change often. Every model ID in this lab is an example — confirm yours in stage 1 and use that value throughout. This lab was written against the Bedrock console as of September 2026.</p>
+  </div>
+</div>
+
+<!-- STAGE 1 -->
+<section class="stage">
+  <div class="stage-head"><div class="num">1</div><h2>Enable model access and find your real model ID</h2></div>
+  <p class="goal">Console. Nothing works until the account has been granted access to a model in the region you are calling.</p>
+  <div class="stage-body">
+    <p>Bedrock access is per account, per region. An account with access in <code>us-east-1</code> has none in <code>ap-south-1</code>.</p>
+    <ol>
+      <li>Sign in and set the region selector to <strong>Asia Pacific (Mumbai) ap-south-1</strong>.</li>
+      <li>Open <strong>Amazon Bedrock → Model access</strong>.</li>
+      <li>Enable at least one small, cheap text model — Amazon Nova Lite is a good default — and one Anthropic Claude model if your account is eligible. Serverless text models are usually granted immediately.</li>
+      <li>Open <strong>Chat / Text playground</strong>, pick the model, and send one message. If this fails, stop here; nothing downstream will work.</li>
+    </ol>
+
+    <p>Now get the identifier your code will use. Many models are not callable directly in ap-south-1 and must be reached through a cross-region inference profile whose ID starts with <code>apac.</code>:</p>
+<pre><code>aws bedrock list-inference-profiles \
+  --region ap-south-1 \
+  --query "inferenceProfileSummaries[].{id:inferenceProfileId,models:models[].modelArn}" \
+  --output table</code></pre>
+    <p>Pick one and keep both facts: the profile ID (for <code>modelId</code>) and the list of underlying model ARNs (for IAM in stage 3).</p>
+
+    <div class="callout lens">
+      <span class="tag">Exam lens</span>
+      <p>A recurring question shape: a call that works in one region throws <code>AccessDeniedException</code> or <code>ValidationException</code> in another. The three causes to rank in order — model access not enabled in that region, the model requiring an inference profile rather than a bare model ID, and an IAM policy that names the model but not the profile.</p>
+    </div>
+
+    <div class="done">
+      <span class="tag">Done when</span>
+      <label><input type="checkbox">The playground returns a response in ap-south-1.</label>
+      <label><input type="checkbox">You have written down a model or inference-profile ID and its underlying model ARNs.</label>
+    </div>
+  </div>
+</section>
+
+<!-- STAGE 2 -->
+<section class="stage">
+  <div class="stage-head"><div class="num">2</div><h2>Make the call by hand before you make it in Lambda</h2></div>
+  <p class="goal">Code. Get a working Converse call in CloudShell so that later failures are clearly IAM or packaging, not the request.</p>
+  <div class="stage-body">
+    <p>Open <strong>CloudShell</strong> in ap-south-1 and save this as <code>triage.py</code>.</p>
+    <p class="filename">triage.py</p>
+<pre><code>import json, boto3
+
+MODEL_ID = "apac.amazon.nova-lite-v1:0"   # replace with your stage 1 value
+brt = boto3.client("bedrock-runtime", region_name="ap-south-1")
+
+SYSTEM = """You triage customer support tickets.
+Reply with JSON only, no prose, matching exactly:
+{"category": "billing|technical|account|other",
+ "urgency": "low|medium|high",
+ "contains_personal_data": true|false,
+ "summary": "one sentence"}"""
+
+def triage(ticket_text):
+    resp = brt.converse(
+        modelId=MODEL_ID,
+        system=[{"text": SYSTEM}],
+        messages=[{"role": "user", "content": [{"text": ticket_text}]}],
+        inferenceConfig={"maxTokens": 400, "temperature": 0, "topP": 0.9},
+    )
+    text = resp["output"]["message"]["content"][0]["text"]
+    return json.loads(text), resp["usage"], resp["stopReason"]
+
+if __name__ == "__main__":
+    body, usage, stop = triage(
+        "Charged twice for the October invoice on card ending 4417. "
+        "Reply to arun.k@example.com. This is blocking our month-end close."
+    )
+    print(json.dumps(body, indent=2))
+    print(usage, stop)</code></pre>
+
+    <p>Run <code>python3 triage.py</code>. Three fields in the response deserve attention:</p>
+    <table>
+      <tr><th>Field</th><th>Why it matters</th></tr>
+      <tr><td><code>usage</code></td><td>Input and output token counts. This is your unit of cost and the thing you alarm on later.</td></tr>
+      <tr><td><code>stopReason</code></td><td><code>end_turn</code> is clean. <code>max_tokens</code> means you truncated the model mid-JSON — the parse will fail, and raising <code>maxTokens</code> is the fix.</td></tr>
+      <tr><td><code>content[0]["text"]</code></td><td>Content is a <em>list</em> of blocks. Indexing <code>[0]</code> is fine now but breaks the moment you add tool use or reasoning blocks.</td></tr>
+    </table>
+
+    <div class="callout lens">
+      <span class="tag">Exam lens</span>
+      <p>Know the difference between <code>temperature</code>, <code>topP</code> and <code>topK</code>, and know that for extraction and classification the correct answer is nearly always the lowest-variance setting. Also know that "the model returned prose around my JSON" is a prompt problem, not a parameter problem.</p>
+    </div>
+
+    <div class="done">
+      <span class="tag">Done when</span>
+      <label><input type="checkbox">The script prints parsed JSON with all four keys.</label>
+      <label><input type="checkbox">You can state your input and output token count for one call.</label>
+    </div>
+  </div>
+</section>
+
+<!-- STAGE 3 -->
+<section class="stage">
+  <div class="stage-head"><div class="num">3</div><h2>Write the execution role yourself</h2></div>
+  <p class="goal">Console plus JSON. This is the stage the exam weights most heavily, so do not take the managed-policy shortcut.</p>
+  <div class="stage-body">
+    <p>Create an IAM role named <code>triage-ticket-role</code> with <strong>Lambda</strong> as the trusted entity, attach <code>AWSLambdaBasicExecutionRole</code> for CloudWatch Logs, then add an inline policy named <code>bedrock-invoke-triage</code>:</p>
+<pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeThroughInferenceProfile",
+      "Effect": "Allow",
+      "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+      "Resource": [
+        "arn:aws:bedrock:ap-south-1:&lt;ACCOUNT_ID&gt;:inference-profile/apac.amazon.nova-lite-v1:0",
+        "arn:aws:bedrock:ap-south-1::foundation-model/amazon.nova-lite-v1:0",
+        "arn:aws:bedrock:ap-northeast-1::foundation-model/amazon.nova-lite-v1:0",
+        "arn:aws:bedrock:ap-southeast-1::foundation-model/amazon.nova-lite-v1:0"
+      ]
+    },
+    {
+      "Sid": "WriteTriageResults",
+      "Effect": "Allow",
+      "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::&lt;RESULTS_BUCKET&gt;/triage/*"
+    }
+  ]
+}</code></pre>
+
+    <p>Two things to notice. Foundation model ARNs have an <strong>empty account field</strong> — the models are not yours. And when you call through a cross-region profile, the profile ARN alone is not enough: the request is authorised against the profile <em>and</em> the underlying model in whichever region it lands in. List every region the profile routes to, or you will get intermittent denials that look like a flaky service.</p>
+
+    <div class="callout caution">
+      <span class="tag">Do not do this</span>
+      <p><code>"Action": "bedrock:*"</code> with <code>"Resource": "*"</code> will pass this lab and fail a security review. It grants the ability to create guardrails, delete prompts, and start expensive customisation jobs from a function whose only job is to classify text.</p>
+    </div>
+
+    <p>Now test the boundary. Add a second statement denying one model you did <em>not</em> intend to use, or temporarily remove one region ARN and rerun. Watching the call fail teaches you more than watching it succeed.</p>
+
+    <div class="callout lens">
+      <span class="tag">Exam lens</span>
+      <p>Expect scenarios that mix identity policies with condition keys: restricting invocation by tag with <code>aws:RequestTag</code>, forcing calls through a VPC endpoint with <code>aws:SourceVpce</code>, or scoping a role to one team's application inference profile. The pattern to recognise is that Bedrock authorisation happens on the <em>routing target</em>, not just the model family.</p>
+    </div>
+
+    <div class="done">
+      <span class="tag">Done when</span>
+      <label><input type="checkbox">The role exists with an inline policy naming specific ARNs, no wildcards on model resources.</label>
+      <label><input type="checkbox">You have seen an <code>AccessDeniedException</code> caused by a missing ARN and fixed it.</label>
+    </div>
+  </div>
+</section>
+
+<!-- STAGE 4 -->
+<section class="stage">
+  <div class="stage-head"><div class="num">4</div><h2>Deploy the triage function</h2></div>
+  <p class="goal">Console for creation, code for the handler.</p>
+  <div class="stage-body">
+    <p>Create an S3 bucket for results, then <strong>Lambda → Create function</strong>: name <code>triage-ticket</code>, runtime Python 3.13, existing role <code>triage-ticket-role</code>. Under <strong>Configuration → General</strong> set timeout to 60 seconds and memory to 512 MB — the default 3-second timeout is shorter than many model responses.</p>
+    <p class="filename">lambda_function.py</p>
+<pre><code>import json, os, uuid, boto3
+
+MODEL_ID = os.environ["MODEL_ID"]
+BUCKET   = os.environ["RESULTS_BUCKET"]
+
+brt = boto3.client("bedrock-runtime")
+s3  = boto3.client("s3")
+
+SYSTEM = """You triage customer support tickets.
+Reply with JSON only, no prose, matching exactly:
+{"category": "billing|technical|account|other",
+ "urgency": "low|medium|high",
+ "contains_personal_data": true|false,
+ "summary": "one sentence"}"""
+
+def lambda_handler(event, context):
+    ticket = event.get("ticket", "")
+    if not ticket.strip():
+        return {"statusCode": 400, "body": "ticket is required"}
+
+    resp = brt.converse(
+        modelId=MODEL_ID,
+        system=[{"text": SYSTEM}],
+        messages=[{"role": "user", "content": [{"text": ticket}]}],
+        inferenceConfig={"maxTokens": 400, "temperature": 0},
+    )
+
+    raw = resp["output"]["message"]["content"][0]["text"]
+    try:
+        result = json.loads(raw)
+    except json.JSONDecodeError:
+        # Model drifted off format. Fail loud rather than guessing.
+        print(json.dumps({"event": "parse_failure", "raw": raw[:500]}))
+        return {"statusCode": 502, "body": "model returned unparseable output"}
+
+    record = {
+        "id": str(uuid.uuid4()),
+        "request_id": context.aws_request_id,
+        "model_id": MODEL_ID,
+        "usage": resp["usage"],
+        "result": result,
+    }
+    s3.put_object(
+        Bucket=BUCKET,
+        Key=f"triage/{record['id']}.json",
+        Body=json.dumps(record).encode(),
+        ContentType="application/json",
+    )
+    print(json.dumps({"event": "triaged", **record["usage"],
+                      "urgency": result.get("urgency")}))
+    return {"statusCode": 200, "body": json.dumps(record)}</code></pre>
+
+    <p>Set environment variables <code>MODEL_ID</code> and <code>RESULTS_BUCKET</code>, deploy, and test with <code>{"ticket": "..."}</code>.</p>
+
+    <div class="callout verify">
+      <span class="tag">Verify</span>
+      <p>If <code>converse</code> is missing from the runtime's bundled boto3, the error is <code>AttributeError</code>, not a permissions error. Attach a recent AWS SDK for Python layer or bundle boto3 with the deployment package.</p>
+    </div>
+
+    <div class="callout lens">
+      <span class="tag">Exam lens</span>
+      <p>Two design points hide in this handler. Structured logging of token usage per request is what makes per-tenant cost attribution possible later. And failing on a parse error rather than retrying blindly matters — a retry loop against a model that keeps producing prose burns money and returns nothing.</p>
+    </div>
+
+    <div class="done">
+      <span class="tag">Done when</span>
+      <label><input type="checkbox">A test invocation returns 200 and writes an object under <code>triage/</code>.</label>
+      <label><input type="checkbox">CloudWatch Logs shows your structured line with token counts.</label>
+    </div>
+  </div>
+</section>
+
+<!-- STAGE 5 -->
+<section class="stage">
+  <div class="stage-head"><div class="num">5</div><h2>Move the prompt out of the code</h2></div>
+  <p class="goal">Console for authoring, code for invocation. The prompt becomes a versioned resource with its own ARN.</p>
+  <div class="stage-body">
+    <p>A prompt embedded in a handler can only be changed by someone who can deploy code, and its history lives in a git repo nobody audits. Prompt Management fixes both.</p>
+    <ol>
+      <li>Open <strong>Bedrock → Prompt management → Create prompt</strong>, name it <code>ticket-triage</code>.</li>
+      <li>Paste the system text into the prompt body and add a variable placeholder <code>{{ticket}}</code> for the user content.</li>
+      <li>Select your model and set temperature 0, max tokens 400.</li>
+      <li>Test it in the builder, then choose <strong>Create version</strong>. Note the ARN and the version number.</li>
+    </ol>
+
+    <p>Now call the prompt instead of the model. The prompt ARN goes where the model ID used to be:</p>
+<pre><code>resp = brt.converse(
+    modelId="arn:aws:bedrock:ap-south-1:&lt;ACCOUNT_ID&gt;:prompt/&lt;PROMPT_ID&gt;:1",
+    promptVariables={"ticket": {"text": ticket}},
+)</code></pre>
+
+    <p>Model choice and inference config now live in the prompt version, not in your code. Add these permissions to the execution role, scoped to the one prompt:</p>
+<pre><code>{
+  "Effect": "Allow",
+  "Action": ["bedrock:GetPrompt", "bedrock:RenderPrompt"],
+  "Resource": "arn:aws:bedrock:ap-south-1:&lt;ACCOUNT_ID&gt;:prompt/&lt;PROMPT_ID&gt;"
+}</code></pre>
+
+    <div class="callout caution">
+      <span class="tag">Pin the version</span>
+      <p>Pointing at the bare prompt ARN with no <code>:1</code> suffix resolves to the draft, which anyone with console access can edit. Production must reference an immutable version. Promotion is then a config change: point the function at <code>:2</code>, and roll back by pointing it at <code>:1</code>.</p>
+    </div>
+
+    <div class="callout lens">
+      <span class="tag">Exam lens</span>
+      <p>Domain 1 asks about prompt governance directly. The reference answer combines Prompt Management for versioned templates and approval flow, CloudTrail for who changed what, and CloudWatch Logs for access — plus a regression check (a Lambda that runs known inputs through a new version and compares outputs) before promotion.</p>
+    </div>
+
+    <div class="done">
+      <span class="tag">Done when</span>
+      <label><input type="checkbox">The function calls a pinned prompt version and no longer contains the system text.</label>
+      <label><input type="checkbox">You created version 2 with a wording change and switched to it without deploying code.</label>
+    </div>
+  </div>
+</section>
+
+<!-- STAGE 6 -->
+<section class="stage">
+  <div class="stage-head"><div class="num">6</div><h2>Turn on invocation logging and a cost alarm</h2></div>
+  <p class="goal">Console. Bedrock records nothing about model calls until you ask it to.</p>
+  <div class="stage-body">
+    <p>Your Lambda logs prove the function ran. They do not prove what was sent to the model, which is what an auditor asks for.</p>
+    <ol>
+      <li><strong>Bedrock → Settings → Model invocation logging</strong>, enable it.</li>
+      <li>Select both destinations: a CloudWatch log group <code>/aws/bedrock/invocations</code> and an S3 prefix. Console-created roles and bucket policy come with the setup; read them rather than clicking past.</li>
+      <li>Choose which data types to log — text, image, embedding. Logging full request and response bodies is what makes the logs useful and also what makes them sensitive.</li>
+      <li>Invoke the function, wait a minute, and read one log record end to end.</li>
+    </ol>
+
+    <p>The S3 bucket policy the console generates is worth understanding. It allows the <code>bedrock.amazonaws.com</code> service principal to write, and constrains it with <code>aws:SourceAccount</code> and <code>aws:SourceArn</code> so another account cannot induce Bedrock to write into your bucket.</p>
+
+    <p>Then add one alarm. In CloudWatch, create an alarm on the Bedrock metric <code>InputTokenCount</code> (dimension by model), summed over one hour, with a threshold roughly three times your expected volume.</p>
+
+    <div class="callout caution">
+      <span class="tag">Data protection</span>
+      <p>Full-body logs now contain every ticket, including the card fragment and email address in the sample. Apply SSE-KMS on the bucket, a lifecycle rule to expire objects, and a restrictive log-group policy — or log metadata only. Deciding this consciously is the point of the stage.</p>
+    </div>
+
+    <div class="callout lens">
+      <span class="tag">Exam lens</span>
+      <p>Distinguish the three observability layers cleanly: CloudTrail records the control-plane action (who created the guardrail), model invocation logging records the data-plane payload (what was sent to the model), and CloudWatch metrics record volume and latency. Questions about "we need to know what a user asked the model six months ago" point at invocation logging plus S3 retention.</p>
+    </div>
+
+    <div class="done">
+      <span class="tag">Done when</span>
+      <label><input type="checkbox">One invocation appears in both CloudWatch Logs and the S3 prefix.</label>
+      <label><input type="checkbox">You can point to the condition keys in the bucket policy that prevent cross-account abuse.</label>
+      <label><input type="checkbox">A token-volume alarm exists and is in OK state.</label>
+    </div>
+  </div>
+</section>
+
+<!-- STAGE 7 -->
+<section class="stage">
+  <div class="stage-head"><div class="num">7</div><h2>Attach a guardrail, then tear down</h2></div>
+  <p class="goal">Console for the guardrail, one code change to enforce it.</p>
+  <div class="stage-body">
+    <p>Prompt instructions are a request. A guardrail is enforcement, evaluated separately from the model, so it still holds when someone injects instructions inside a ticket body.</p>
+    <ol>
+      <li><strong>Bedrock → Guardrails → Create guardrail</strong>, name it <code>triage-guardrail</code>.</li>
+      <li><strong>Denied topics:</strong> add one — legal advice, say — with a short description and a couple of examples.</li>
+      <li><strong>Sensitive information:</strong> add <code>EMAIL</code> and <code>CREDIT_DEBIT_CARD_NUMBER</code> with action <em>Mask</em>. Masking on input means the model never sees the raw values.</li>
+      <li><strong>Content filters:</strong> leave at medium and note that prompt-attack detection applies to the input side.</li>
+      <li>Test in the console with the sample ticket, then <strong>Create version</strong>.</li>
+    </ol>
+
+    <p>Enforce it in the call:</p>
+<pre><code>resp = brt.converse(
+    modelId=MODEL_ID,
+    system=[{"text": SYSTEM}],
+    messages=[{"role": "user", "content": [{"text": ticket}]}],
+    inferenceConfig={"maxTokens": 400, "temperature": 0},
+    guardrailConfig={
+        "guardrailIdentifier": "&lt;GUARDRAIL_ID&gt;",
+        "guardrailVersion": "1",
+        "trace": "enabled",
+    },
+)
+
+if resp["stopReason"] == "guardrail_intervened":
+    print(json.dumps({"event": "blocked", "trace": resp.get("trace")}))
+    return {"statusCode": 200, "body": json.dumps({"status": "blocked"})}</code></pre>
+
+    <p>Add <code>bedrock:ApplyGuardrail</code> on the guardrail ARN to the execution role. Then send a ticket that asks for legal advice and confirm you get <code>guardrail_intervened</code> rather than an answer.</p>
+
+    <div class="callout lens">
+      <span class="tag">Exam lens</span>
+      <p>Two distinctions to hold. Guardrails are a separate resource with their own versions and can be shared across models and applications — the answer to "we need one policy across three teams' apps" is one guardrail, not three prompts. And <code>ApplyGuardrail</code> can be called standalone to screen text that never goes to a model at all, such as user-generated content.</p>
+    </div>
+
+    <h3>Tear down</h3>
+    <ul>
+      <li>Delete the Lambda function, the IAM role, and the S3 results bucket.</li>
+      <li>Disable model invocation logging and empty or delete the log bucket and log group.</li>
+      <li>Delete the guardrail and the prompt, or keep them — neither costs anything at rest.</li>
+      <li>Delete the CloudWatch alarm.</li>
+    </ul>
+
+    <div class="done">
+      <span class="tag">Done when</span>
+      <label><input type="checkbox">A prohibited request returns <code>guardrail_intervened</code> with a trace explaining which policy fired.</label>
+      <label><input type="checkbox">A ticket containing an email address reaches the model with that value masked.</label>
+      <label><input type="checkbox">Teardown complete, or you have deliberately kept resources for Lab 2.</label>
+    </div>
+  </div>
+</section>
+
+<div class="orient">
+  <h2>What to carry into Lab 2</h2>
+  <p>Keep the account, the region, and the model access. Lab 2 builds a knowledge base over your own documents and reuses exactly one idea from here: that the hard part is not the call, it is deciding which identity may touch which resource.</p>
+  <p>If any check above is still unticked, tick it before moving on. The intermediate lab assumes a working Converse call and a role you wrote yourself.</p>
+</div>
+
+<footer>
+  <div>SF Knowledge Hub · AIP-C01 prep lab 1 of 3 · non-gated</div>
+  <div>build 2026090101</div>
+</footer>
+
+</div>
+
+<!-- Auth gate (Google SSO via redirect + email/password), same as prep pages -->
+<script>
+/* SF auth gate — Google SSO (hd: sourcefuse.com, redirect) + email/password.
+   Reuses sfcertification-grafana. PASTE the live config below per the golden rule. */
+(function () {
+const firebaseConfig = {
+  apiKey: "AIzaSyC-I-IOCq2fCwa471fsD5xOn6SYQSBDp7Q",
+  authDomain: "sfcertification-grafana.firebaseapp.com",
+  projectId: "sfcertification-grafana",
+  storageBucket: "sfcertification-grafana.firebasestorage.app",
+  messagingSenderId: "227322696511",
+  appId: "1:227322696511:web:12e7ced7dd3d45fa06798a"
+};
+  const ALLOWED_DOMAIN = "sourcefuse.com";
+  const ALLOWED_EXTRA = ["ravjv2013@gmail.com"];  // TEST ONLY — remove after testing
+  // Google SSO is restricted to these admin addresses ONLY. Everyone else signs in
+  // with email/password (that path is unchanged and still uses validDomain()).
+  const ADMIN_SSO = ["jv.ravichandran@sourcefuse.com","noushin.khan@sourcefuse.com"];
+  let auth, GoogleProvider, signInRedirect, signInPopup, getRedirect, signInEmail, onAuth, signOutFn, appMod;
+  let readyCb = null;
+
+  async function initFirebase() {
+    appMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+    const authMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+    const app = appMod.getApps().length ? appMod.getApp() : appMod.initializeApp(firebaseConfig);
+    auth = authMod.getAuth(app);
+    GoogleProvider = authMod.GoogleAuthProvider;
+    signInRedirect = (p) => authMod.signInWithRedirect(auth, p);
+    signInPopup = (p) => authMod.signInWithPopup(auth, p);
+    getRedirect = () => authMod.getRedirectResult(auth);
+    signInEmail = (e, pw) => authMod.signInWithEmailAndPassword(auth, e, pw);
+    onAuth = (cb) => authMod.onAuthStateChanged(auth, cb);
+    signOutFn = () => authMod.signOut(auth);
+  }
+  function styleTag(){return `<style>
+    .sf-auth-backdrop{position:fixed;inset:0;background:rgba(16,38,60,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
+    .sf-auth-card{background:#fff;border-radius:16px;padding:30px 28px;width:100%;max-width:380px;box-shadow:0 12px 40px rgba(10,30,55,.25)}
+    .sf-auth-badge{display:inline-block;background:var(--blue,#1a6eb5);color:#fff;font-weight:700;font-size:12px;padding:4px 11px;border-radius:14px;margin-bottom:14px}
+    .sf-auth-card h2{margin:0 0 4px;font-size:20px;color:#1a2733}
+    .sf-auth-sub{margin:0 0 20px;color:#5a6b7a;font-size:14px}
+    .sf-google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;border:1.5px solid #dbe3ec;border-radius:10px;padding:12px;font-size:15px;font-weight:600;color:#1a2733;cursor:pointer;font-family:inherit}
+    .sf-google:hover{background:#f7fbff;border-color:var(--blue,#1a6eb5)}
+    .sf-g{background:conic-gradient(from -45deg,#ea4335 0 25%,#fbbc05 0 50%,#34a853 0 75%,#4285f4 0);color:#fff;font-weight:800;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px}
+    .sf-or{display:flex;align-items:center;text-align:center;color:#93a1af;font-size:12px;margin:18px 0}
+    .sf-or::before,.sf-or::after{content:"";flex:1;height:1px;background:#e2e8ef}
+    .sf-or span{padding:0 12px}
+    .sf-lbl{display:block;font-size:12.5px;font-weight:600;color:#5a6b7a;margin-bottom:5px}
+    .sf-inp{width:100%;border:1.5px solid #dbe3ec;border-radius:9px;padding:11px 12px;font-size:14.5px;margin-bottom:14px;font-family:inherit}
+    .sf-inp:focus{outline:none;border-color:var(--blue,#1a6eb5)}
+    .sf-signin{width:100%;background:var(--blue,#1a6eb5);color:#fff;border:0;border-radius:10px;padding:12px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
+    .sf-signin:hover{background:var(--blue-d,#12507f)}
+    .sf-err{color:#b5341a;font-size:13px;margin-top:12px;min-height:16px}
+  </style>`;}
+  function overlayHTML(){return `
+    <div class="sf-auth-backdrop" id="sf-auth"><div class="sf-auth-card">
+      <div class="sf-auth-badge">SF Knowledge Hub</div>
+      <h2>Sign in</h2>
+      <p class="sf-auth-sub">Use your SourceFuse account to view your results.</p>
+      <button class="sf-google" id="sf-google"><span class="sf-g">G</span> Sign in with Google</button>
+      <div class="sf-or"><span>or</span></div>
+      <label class="sf-lbl">Email</label>
+      <input class="sf-inp" id="sf-email" type="email" placeholder="you@sourcefuse.com" autocomplete="username">
+      <label class="sf-lbl">Password</label>
+      <input class="sf-inp" id="sf-pass" type="password" placeholder="••••••••" autocomplete="current-password">
+      <button class="sf-signin" id="sf-signin">Sign in</button>
+      <div class="sf-err" id="sf-err"></div>
+    </div></div>`;}
+  function fail(m){const e=document.getElementById("sf-err");if(e)e.textContent=m;}
+  function validDomain(x){if(typeof x!=="string")return false;var e=x.toLowerCase();return e.endsWith("@"+ALLOWED_DOMAIN)||ALLOWED_EXTRA.includes(e);}
+  function validGoogle(x){if(typeof x!=="string")return false;return ADMIN_SSO.includes(x.toLowerCase());}
+  function isGoogleUser(u){try{return !!(u&&u.providerData&&u.providerData.some(function(p){return p&&p.providerId==="google.com";}));}catch(_){return false;}}
+  function proceed(email){const el=document.getElementById("sf-auth");if(el)el.remove();if(readyCb)readyCb(email,signOutFn);}
+  function wireOverlay(){
+    document.getElementById("sf-google").addEventListener("click",async()=>{
+      fail("");
+      if(!signInRedirect)return fail("Auth service not ready — Google SSO needs the deployed https host. Use email/password below.");
+      const p=new GoogleProvider();p.setCustomParameters({hd:ALLOWED_DOMAIN,prompt:"select_account"});
+      // Popup avoids the cross-site redirect handshake that browsers now block.
+      if(signInPopup){
+        try{
+          console.log("[auth] starting Google popup…");
+          const r=await signInPopup(p);
+          const email=(r&&r.user&&r.user.email)||"";
+          console.log("[auth] popup result; user:",email);
+          if(!validGoogle(email)){await signOutFn();return fail("Google sign-in is restricted to admin accounts. Use email/password below.");}
+          return proceed(email);
+        }catch(e){
+          console.log("[auth] signInWithPopup failed; code:",e&&e.code,"| message:",e&&e.message);
+          const blocked=e&&(e.code==="auth/popup-blocked"||e.code==="auth/operation-not-supported-in-this-environment");
+          if(!blocked)return fail("Google sign-in couldn't complete. Use email/password below.");
+        }
+      }
+      try{
+        try{sessionStorage.setItem("sf-google-pending","1");}catch(_){}
+        console.log("[auth] popup unavailable — falling back to redirect…");
+        await signInRedirect(p);}
+      catch(e){console.log("[auth] signInWithRedirect failed; code:",e&&e.code,"| message:",e&&e.message);fail("Google sign-in couldn't start. Use email/password below.");}
+    });
+    document.getElementById("sf-signin").addEventListener("click",async()=>{
+      fail("");
+      const email=(document.getElementById("sf-email").value||"").trim();
+      const pass=document.getElementById("sf-pass").value||"";
+      console.log("[auth] sign-in clicked; email:",email,"| password length:",pass.length);
+      console.log("[auth] validDomain(email):",validDomain(email));
+      if(!validDomain(email))return fail("Email must be an @sourcefuse.com address.");
+      if(!pass)return fail("Enter your password.");
+      try{const r=await signInEmail(email,pass);console.log("[auth] signInEmail success; user:",r.user&&r.user.email);proceed((r.user&&r.user.email)||email);}
+      catch(e){console.log("[auth] signInEmail failed; code:",e&&e.code,"| message:",e&&e.message);fail("Incorrect email or password.");}
+    });
+  }
+  async function mount(onReady){
+    readyCb=onReady;
+    document.head.insertAdjacentHTML("beforeend",styleTag());
+    document.body.insertAdjacentHTML("beforeend",overlayHTML());
+    try{await initFirebase();}catch(e){fail("Auth service loading… (Google SSO needs the deployed https host).");}
+    if(getRedirect){
+      try{const res=await getRedirect();
+        console.log("[auth] getRedirectResult resolved:",res,"| user:",res&&res.user&&res.user.email);
+        if(res&&res.user){const email=res.user.email;
+          if(!validGoogle(email)){await signOutFn();fail("Google sign-in is restricted to admin accounts. Use email/password below.");}
+          else{proceed(email);return;}}
+        else if(sessionStorage.getItem("sf-google-pending")==="1"){
+          sessionStorage.removeItem("sf-google-pending");
+          console.log("[auth] redirect returned NO pending result — handshake lost (likely third-party cookie/storage blocking).");
+          fail("Google sign-in didn't complete (browser blocked the sign-in handshake). Use email/password below.");
+        }
+      }catch(e){
+        console.log("[auth] getRedirectResult error; code:",e&&e.code,"| message:",e&&e.message);
+        fail("Google sign-in didn't complete. Try again or use email/password.");
+      }
+    }
+    if(onAuth){onAuth(async(u)=>{
+      if(!u)return;
+      if(isGoogleUser(u)){
+        if(validGoogle(u.email))proceed(u.email);
+        else{console.log("[auth] non-admin Google session rejected:",u.email);await signOutFn();fail("Google sign-in is restricted to admin accounts. Use email/password below.");}
+        return;
+      }
+      if(validDomain(u.email))proceed(u.email);
+    });}
+    wireOverlay();
+  }
+  window.SFAuth={mount};
+})();
+</script>
+
+<!-- Lab progress: courseProgress/{uid} v2, moduleKey = filename minus .html -->
+<script type="module">
+(function(){
+  const MODULE_KEY = "aip-c01-lab-basic";
+  const CP_COURSE_ID = "__PASTE_COURSE_DOC_ID__";   // Firestore auto-id of the courses doc
+  const FB = "https://www.gstatic.com/firebasejs/10.12.2/";
+
+  let store = null;          // { checks:{}, complete:bool }
+  let save = async () => {};
+  let boxes = [];
+
+  function render(){
+    const done = boxes.filter(b => b.checked).length;
+    const fill = document.getElementById('fill');
+    const count = document.getElementById('count');
+    fill.style.width = (boxes.length ? (done / boxes.length) * 100 : 0) + '%';
+    count.textContent = done + ' of ' + boxes.length + ' checks done';
+    boxes.forEach(b => b.parentNode.classList.toggle('checked', b.checked));
+  }
+
+  async function bootProgress(email){
+    const appMod   = await import(FB + "firebase-app.js");
+    const authMod  = await import(FB + "firebase-auth.js");
+    const fsMod    = await import(FB + "firebase-firestore.js");
+    const app  = appMod.getApp();
+    const uid  = authMod.getAuth(app).currentUser.uid;
+    const db   = fsMod.getFirestore(app);
+    const ref  = fsMod.doc(db, "courseProgress", uid);
+
+    const snap = await fsMod.getDoc(ref);
+    const data = snap.exists() ? (snap.data() || {}) : {};
+    const mod  = (((data.courses || {})[CP_COURSE_ID] || {}).modules || {})[MODULE_KEY] || {};
+    store = { checks: mod.checks || {}, complete: !!mod.complete };
+
+    save = async () => {
+      const checks = {};
+      boxes.forEach((b, i) => { checks["c" + i] = b.checked; });
+      const complete = boxes.every(b => b.checked);
+      await fsMod.setDoc(ref, {
+        email: email,
+        updatedAt: new Date().toISOString(),
+        courses: { [CP_COURSE_ID]: { modules: { [MODULE_KEY]: {
+          checks: checks,
+          complete: complete,
+          total: boxes.length,
+          done: boxes.filter(b => b.checked).length,
+          updatedAt: new Date().toISOString()
+        } } } }
+      }, { merge: true });
+    };
+
+    boxes.forEach((b, i) => { b.checked = !!store.checks["c" + i]; });
+    render();
+  }
+
+  window.SFAuth.mount(async function(email, signOut){
+    document.getElementById('who').innerHTML =
+      email + ' <button class="signout" id="signout">Sign out</button>';
+    const so = document.getElementById('signout');
+    if (so && signOut) so.onclick = () => signOut().then(() => location.reload());
+
+    boxes = Array.prototype.slice.call(
+      document.querySelectorAll('.done input[type=checkbox]'));
+
+    try { await bootProgress(email); }
+    catch(e){ console.log('[progress] falling back to in-page only:', e && e.message); render(); }
+
+    boxes.forEach(b => b.addEventListener('change', async () => {
+      render();
+      try { await save(); }
+      catch(e){ console.log('[progress] save failed:', e && e.message); }
+    }));
+  });
+})();
+</script>
+
+</body>
+</html>
