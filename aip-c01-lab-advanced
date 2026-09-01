@@ -790,78 +790,156 @@ const firebaseConfig = {
 })();
 </script>
 
-<!-- Lab progress: courseProgress/{uid} v2, moduleKey = filename minus .html -->
+<!-- Lab progress — matches the deployed Type 2 course:
+     section state -> progress/{uid} (legacy collection, still in use)
+     completions   -> courseProgress/{uid} with completedOn / completedAt
+                      date+time STRINGS, which is what the admin Course
+                      Progress reader keys on. Not a boolean.
+     Reuses the DEFAULT Firebase app already initialised by the auth gate. -->
 <script type="module">
 (function(){
-  const MODULE_KEY = "aip-c01-lab-advanced";
-  const CP_COURSE_ID = "wHrEICUXtPcUWbmzZDZQ";   // Firestore auto-id of the courses doc
-  const FB = "https://www.gstatic.com/firebasejs/10.12.2/";
+  var CP_COURSE_ID = "wHrEICUXtPcUWbmzZDZQ";
+  var MODULE_KEY   = "aip-c01-lab-advanced";
+  var PROGRESS_KEY = "aip_m3";        /* progress/{uid} field, mirrors af_m1 convention */
+  var MODULE_KEYS  = ["aip-c01-lab-basic","aip-c01-lab-intermediate","aip-c01-lab-advanced"];
+  var FB = "https://www.gstatic.com/firebasejs/10.12.2/";
 
-  let store = null;          // { checks:{}, complete:bool }
-  let save = async () => {};
-  let boxes = [];
+  var boxes = [], fs = null, cpRef = null, prRef = null, courseObj = {}, user = null;
 
+  function stamp(){
+    var p = function(n){ return String(n).padStart(2,"0"); };
+    var d = new Date();
+    return { date: d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate()),
+             time: p(d.getHours())+":"+p(d.getMinutes())+":"+p(d.getSeconds()) };
+  }
+  function checkedIndices(){
+    var out = []; boxes.forEach(function(b,i){ if(b.checked) out.push(i); }); return out;
+  }
+  function isDone(obj, mk){
+    var m = (obj.modules||{})[mk]; return !!(m && m.completedOn);
+  }
   function render(){
-    const done = boxes.filter(b => b.checked).length;
-    const fill = document.getElementById('fill');
-    const count = document.getElementById('count');
-    fill.style.width = (boxes.length ? (done / boxes.length) * 100 : 0) + '%';
-    count.textContent = done + ' of ' + boxes.length + ' checks done';
-    boxes.forEach(b => b.parentNode.classList.toggle('checked', b.checked));
+    var done = checkedIndices().length;
+    document.getElementById('fill').style.width =
+      (boxes.length ? (done/boxes.length)*100 : 0) + '%';
+    document.getElementById('count').textContent =
+      done + ' of ' + boxes.length + ' checks done'
+      + (done === boxes.length && boxes.length ? ' · lab complete' : '');
+    boxes.forEach(function(b){ b.parentNode.classList.toggle('checked', b.checked); });
   }
 
-  async function bootProgress(email){
-    const appMod   = await import(FB + "firebase-app.js");
-    const authMod  = await import(FB + "firebase-auth.js");
-    const fsMod    = await import(FB + "firebase-firestore.js");
-    const app  = appMod.getApp();
-    const uid  = authMod.getAuth(app).currentUser.uid;
-    const db   = fsMod.getFirestore(app);
-    const ref  = fsMod.doc(db, "courseProgress", uid);
+  /* Section checkboxes for this lab, stored as an array of indices. */
+  function saveSections(){
+    var payload = {}; payload[PROGRESS_KEY] = checkedIndices();
+    return fs.setDoc(prRef, payload, { merge: true });
+  }
 
-    const snap = await fsMod.getDoc(ref);
-    const data = snap.exists() ? (snap.data() || {}) : {};
-    const mod  = (((data.courses || {})[CP_COURSE_ID] || {}).modules || {})[MODULE_KEY] || {};
-    store = { checks: mod.checks || {}, complete: !!mod.complete };
+  /* Stamps course start on first contact and records the current module.
+     Only writes when the stored value would actually change. */
+  function setModuleInProgress(){
+    if (courseObj.courseCompletedOn) return Promise.resolve();
+    if (isDone(courseObj, MODULE_KEY)) return Promise.resolve();
+    var needStart = !courseObj.courseStartedOn;
+    if (courseObj.moduleInProgress === MODULE_KEY && !needStart) return Promise.resolve();
 
-    save = async () => {
-      const checks = {};
-      boxes.forEach((b, i) => { checks["c" + i] = b.checked; });
-      const complete = boxes.every(b => b.checked);
-      await fsMod.setDoc(ref, {
-        email: email,
-        updatedAt: new Date().toISOString(),
-        courses: { [CP_COURSE_ID]: { modules: { [MODULE_KEY]: {
-          checks: checks,
-          complete: complete,
-          total: boxes.length,
-          done: boxes.filter(b => b.checked).length,
-          updatedAt: new Date().toISOString()
-        } } } }
-      }, { merge: true });
-    };
+    var t = stamp();
+    var courseUpdate = { moduleInProgress: MODULE_KEY };
+    if (needStart) { courseUpdate.courseStartedOn = t.date; courseUpdate.courseStartedAt = t.time; }
 
-    boxes.forEach((b, i) => { b.checked = !!store.checks["c" + i]; });
+    var update = { email: user.email, name: user.displayName || user.email, courses: {} };
+    update.courses[CP_COURSE_ID] = courseUpdate;
+    courseObj.moduleInProgress = MODULE_KEY;
+    if (needStart) courseObj.courseStartedOn = t.date;
+
+    return fs.setDoc(cpRef, update, { merge: true })
+      .catch(function(e){ console.error("moduleInProgress write failed", e); });
+  }
+
+  /* Read-then-merge completion write. Preserves other courses and any module
+     already recorded, and stamps course start / course completion. */
+  function completeModule(){
+    var t = stamp();
+    return fs.getDoc(cpRef).then(function(snap){
+      var data = snap.exists() ? (snap.data()||{}) : {};
+      var obj  = (data.courses||{})[CP_COURSE_ID] || {};
+      var existing = obj.modules || {};
+
+      var courseUpdate = { modules: {} };
+      if (!obj.courseStartedOn) { courseUpdate.courseStartedOn = t.date; courseUpdate.courseStartedAt = t.time; }
+      if (!(existing[MODULE_KEY] && existing[MODULE_KEY].completedOn)) {
+        courseUpdate.modules[MODULE_KEY] = { completedOn: t.date, completedAt: t.time };
+      }
+
+      var doneAfter = function(mk){
+        return !!((existing[mk] && existing[mk].completedOn) || courseUpdate.modules[mk]);
+      };
+      if (MODULE_KEYS.every(doneAfter)) {
+        if (!obj.courseCompletedOn) { courseUpdate.courseCompletedOn = t.date; courseUpdate.courseCompletedAt = t.time; }
+        courseUpdate.moduleInProgress = null;
+      } else {
+        var next = null;
+        for (var i = 0; i < MODULE_KEYS.length; i++) {
+          if (!doneAfter(MODULE_KEYS[i])) { next = MODULE_KEYS[i]; break; }
+        }
+        courseUpdate.moduleInProgress = next;
+      }
+
+      var update = { email: user.email, name: user.displayName || user.email, courses: {} };
+      update.courses[CP_COURSE_ID] = courseUpdate;
+      courseObj = Object.assign({}, obj, courseUpdate);
+      return fs.setDoc(cpRef, update, { merge: true });
+    });
+  }
+
+  async function boot(){
+    var appMod  = await import(FB + "firebase-app.js");
+    var authMod = await import(FB + "firebase-auth.js");
+    fs          = await import(FB + "firebase-firestore.js");
+    var app = appMod.getApp();                    /* DEFAULT app, never a named one */
+    user    = authMod.getAuth(app).currentUser;
+    var db  = fs.getFirestore(app);
+    cpRef   = fs.doc(db, "courseProgress", user.uid);
+    prRef   = fs.doc(db, "progress",       user.uid);
+
+    var indices = [];
+    try {
+      var ps = await fs.getDoc(prRef);
+      if (ps.exists()) indices = (ps.data()||{})[PROGRESS_KEY] || [];
+    } catch(e){ console.error("progress read failed", e); }
+    boxes.forEach(function(b,i){ b.checked = indices.indexOf(i) !== -1; });
+
+    try {
+      var cs = await fs.getDoc(cpRef);
+      if (cs.exists()) courseObj = ((cs.data()||{}).courses||{})[CP_COURSE_ID] || {};
+    } catch(e){ console.error("courseProgress read failed", e); }
+
     render();
+    await setModuleInProgress();
   }
 
   window.SFAuth.mount(async function(email, signOut){
     document.getElementById('who').innerHTML =
       email + ' <button class="signout" id="signout">Sign out</button>';
-    const so = document.getElementById('signout');
-    if (so && signOut) so.onclick = () => signOut().then(() => location.reload());
+    var so = document.getElementById('signout');
+    if (so && signOut) so.onclick = function(){ signOut().then(function(){ location.reload(); }); };
 
-    boxes = Array.prototype.slice.call(
-      document.querySelectorAll('.done input[type=checkbox]'));
+    boxes = Array.prototype.slice.call(document.querySelectorAll('.done input[type=checkbox]'));
 
-    try { await bootProgress(email); }
-    catch(e){ console.log('[progress] falling back to in-page only:', e && e.message); render(); }
+    try { await boot(); }
+    catch(e){ console.error("[progress] running in-page only:", e); render(); }
 
-    boxes.forEach(b => b.addEventListener('change', async () => {
-      render();
-      try { await save(); }
-      catch(e){ console.log('[progress] save failed:', e && e.message); }
-    }));
+    boxes.forEach(function(b){
+      b.addEventListener('change', async function(){
+        render();
+        if (!fs) return;
+        try {
+          await saveSections();
+          if (boxes.every(function(x){ return x.checked; }) && !isDone(courseObj, MODULE_KEY)) {
+            await completeModule();
+          }
+        } catch(e){ console.error("[progress] save failed:", e); }
+      });
+    });
   });
 })();
 </script>
