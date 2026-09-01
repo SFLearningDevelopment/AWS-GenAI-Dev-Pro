@@ -315,7 +315,8 @@ s3://policy-corpus-.../security/access-control.pdf</code></pre>
 
     <div class="callout lens">
       <span class="tag">Exam lens</span>
-      <p>Symptom-to-strategy mapping is the testable skill. Answers that quote the right sentence but miss the surrounding context suggest chunks that are too small or lack overlap. Answers that wander off-topic suggest chunks that are too large. A requirement for precise retrieval with wide context in one system points at hierarchical chunking.</p>
+      <p>Questions hand you a symptom and expect the strategy. Answers that quote the right sentence but miss the qualification around it point at chunks that are too small, or that have no overlap so a passage was split mid-thought. Answers that drift off-topic point at chunks that are too large, because one embedding is being asked to stand for several ideas at once. A requirement for precise matching <em>and</em> wide context in the same system is hierarchical chunking, which searches small child chunks and returns their larger parents.</p>
+      <p>One constraint often decides the question: changing chunking means re-ingesting the corpus, so a scenario that rules out reprocessing also rules out chunking as the fix, and pushes you toward query-side changes instead.</p>
     </div>
 
     <div class="done">
@@ -384,7 +385,8 @@ s3://policy-corpus-.../security/access-control.pdf</code></pre>
 
     <div class="callout lens">
       <span class="tag">Exam lens</span>
-      <p>Recognise <code>aws:SourceArn</code> and <code>aws:SourceAccount</code> on a service-principal trust policy as confused-deputy prevention, and <code>aws:ResourceAccount</code> on an S3 statement as a guard against reading buckets outside your account. Both show up as distractor-heavy multiple-response questions in Domain 3.</p>
+      <p><code>aws:SourceArn</code> and <code>aws:SourceAccount</code> on a service-principal <em>trust</em> policy are confused-deputy prevention: they stop another account's knowledge base from inducing the Bedrock service to assume your role and read your data. <code>aws:ResourceAccount</code> on an S3 statement in the <em>permissions</em> policy does a different job — it stops the role reading a bucket that belongs to someone else.</p>
+      <p>The distractors to reject are answers that put the source conditions on the permissions policy rather than the trust policy, and answers that claim a bucket policy alone closes the gap.</p>
     </div>
 
     <div class="done">
@@ -465,7 +467,8 @@ print(json.dumps(sources, indent=2))</code></pre>
 
     <div class="callout lens">
       <span class="tag">Exam lens</span>
-      <p>Know when <code>RetrieveAndGenerate</code> is enough and when it is not. It is enough for a straightforward cited answer. It is not enough when you need to rerank results, merge sources from outside the knowledge base, or apply your own prompt structure — those call for <code>Retrieve</code> plus your own <code>Converse</code> call. Filters, top-k and search type are the three knobs worth memorising.</p>
+      <p>Know when <code>RetrieveAndGenerate</code> is enough and when it is not. It is enough for a straightforward cited answer. It is not enough when you need to rerank results, merge sources from outside the knowledge base, or apply your own prompt structure — those call for <code>Retrieve</code> plus your own <code>Converse</code> call.</p>
+      <p>Three settings in the retrieval configuration carry most of the exam weight. <code>filter</code> restricts candidates by metadata <em>before</em> the search runs, which is what makes tenant isolation real. <code>numberOfResults</code> caps how many chunks reach the model, so it is both a quality control and a token-cost control. <code>overrideSearchType</code> switches between semantic-only and hybrid, and hybrid is the answer whenever queries carry exact identifiers, part numbers or policy codes.</p>
     </div>
 
     <div class="done">
@@ -785,7 +788,7 @@ const firebaseConfig = {
 <script type="module">
 (function(){
   const MODULE_KEY = "aip-c01-lab-intermediate";
-  const CP_COURSE_ID = "__PASTE_COURSE_DOC_ID__";   // Firestore auto-id of the courses doc
+  const CP_COURSE_ID = "wHrEICUXtPcUWbmzZDZQ";   // Firestore auto-id of the courses doc
   const FB = "https://www.gstatic.com/firebasejs/10.12.2/";
 
   let store = null;          // { checks:{}, complete:bool }
