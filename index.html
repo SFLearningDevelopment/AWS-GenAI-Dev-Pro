@@ -213,35 +213,35 @@ const firebaseConfig = {
 })();
 </script>
 
-<!-- Dashboard: reads courseProgress/{uid} v2 for the signed-in user -->
+<!-- Dashboard: reads courseProgress/{uid} completions + progress/{uid} section state -->
 <script type="module">
 (function(){
   var BUILD="2026090104";
-  var CP_COURSE_ID="wHrEICUXtPcUWbmzZDZQ";   // Firestore auto-id of the courses doc
+  var CP_COURSE_ID="wHrEICUXtPcUWbmzZDZQ";
   var FB="https://www.gstatic.com/firebasejs/10.12.2/";
 
   var LABS=[
-    { key:"aip-c01-lab-basic", tag:"BASIC", tagClass:"tag-basic",
-      name:"Lab 1 — Invoke and govern a foundation model",
+    { key:"aip-c01-lab-basic", pkey:"aip_m1", checks:16, tag:"BASIC", tagClass:"tag-basic",
+      name:"Lab 1 \u2014 Invoke and govern a foundation model",
       desc:"Bedrock Converse from Lambda, a hand-written IAM role, versioned prompts, invocation logging and a guardrail.",
-      domains:"Domains 1, 3", time:"90–120 min",
+      domains:"Domains 1, 3", time:"90\u2013120 min",
       file:"aip-c01-lab-basic.html", build:"2026090101", boxLabel:"Lab 1" },
-    { key:"aip-c01-lab-intermediate", tag:"INTERMEDIATE", tagClass:"tag-inter",
-      name:"Lab 2 — Ground a model in your own documents",
+    { key:"aip-c01-lab-intermediate", pkey:"aip_m2", checks:17, tag:"INTERMEDIATE", tagClass:"tag-inter",
+      name:"Lab 2 \u2014 Ground a model in your own documents",
       desc:"S3 corpus to knowledge base, chunking and embeddings, retrieval quality, and metadata filtering for tenant isolation.",
-      domains:"Domains 1, 2", time:"2.5–3 hrs",
+      domains:"Domains 1, 2", time:"2.5\u20133 hrs",
       file:"aip-c01-lab-intermediate.html", build:"2026090102", boxLabel:"Lab 2" },
-    { key:"aip-c01-lab-advanced", tag:"ADVANCED", tagClass:"tag-adv",
-      name:"Lab 3 — Ship an agent that can act",
+    { key:"aip-c01-lab-advanced", pkey:"aip_m3", checks:20, tag:"ADVANCED", tagClass:"tag-adv",
+      name:"Lab 3 \u2014 Ship an agent that can act",
       desc:"Agent with Lambda action groups, contextual grounding guardrail, traces, batch orchestration, cost control and evaluation.",
-      domains:"Domains 2, 3, 4, 5", time:"3.5–4 hrs",
+      domains:"Domains 2, 3, 4, 5", time:"3.5\u20134 hrs",
       file:"aip-c01-lab-advanced.html", build:"2026090103", boxLabel:"Lab 3" }
   ];
 
   function pctClass(p){return p>=70?"good":p>=50?"mid":"low";}
 
-  function boxHTML(lab,mod){
-    var done=(mod&&mod.done)||0, total=(mod&&mod.total)||0;
+  function boxHTML(lab,state){
+    var done=state.done, total=lab.checks, complete=state.complete;
     var pct=total?Math.round(done/total*100):0;
     var html='';
     html+='<div class="box">';
@@ -249,45 +249,67 @@ const firebaseConfig = {
     html+='<h2>'+lab.name+'</h2>';
     html+='<p class="desc">'+lab.desc+'</p>';
     html+='<p class="meta"><span>'+lab.domains+'</span><span>'+lab.time+'</span></p>';
-    if(!total){
+    if(!done && !complete){
       html+='<div class="stats"><div class="stats-empty">Not started. Launch the lab to begin.</div></div>';
     }else{
       html+='<div class="stats">';
-      html+='<div class="track"><i style="width:'+pct+'%"></i></div>';
-      html+='<div class="stat-row"><span>'+done+' of '+total+' stage checks</span>'
-           +'<span><span class="pct '+pctClass(pct)+'">'+pct+'%</span>'
-           +(mod.complete?' &nbsp;<span class="status done">Complete</span>':'')+'</span></div>';
+      html+='<div class="track"><i style="width:'+(complete?100:pct)+'%"></i></div>';
+      html+='<div class="stat-row"><span>'+(complete
+             ? 'Completed '+state.completedOn
+             : done+' of '+total+' stage checks')+'</span>';
+      html+='<span>'+(complete
+             ? '<span class="status done">Complete</span>'
+             : '<span class="pct '+pctClass(pct)+'">'+pct+'%</span>')+'</span></div>';
       html+='</div>';
     }
     html+='<a class="launch" href="'+lab.file+'?v='+(lab.build||BUILD)+'">'
-        +(total?(mod.complete?'Review '+lab.boxLabel:'Continue '+lab.boxLabel):'Launch '+lab.boxLabel)+' →</a>';
+        +(complete?'Review '+lab.boxLabel:(done?'Continue '+lab.boxLabel:'Launch '+lab.boxLabel))+' \u2192</a>';
     html+='</div>';
     return html;
   }
 
-  function overallHTML(mods){
+  function overallHTML(states,courseObj){
     var started=0,complete=0,done=0,total=0;
     LABS.forEach(function(l){
-      var m=mods[l.key];
-      if(m&&m.total){started++;done+=m.done||0;total+=m.total||0;if(m.complete)complete++;}
+      var st=states[l.key];
+      if(st.done||st.complete)started++;
+      if(st.complete)complete++;
+      done+=st.complete?l.checks:st.done; total+=l.checks;
     });
     var pct=total?Math.round(done/total*100):0;
+    var cert=courseObj.courseCompletedOn
+      ? '<div class="card"><div class="n">\u2713</div><div class="l">Track done '+courseObj.courseCompletedOn+'</div></div>'
+      : '<div class="card"><div class="n">'+pct+'%</div><div class="l">Track progress</div></div>';
     return '<div class="card"><div class="n">'+started+'/'+LABS.length+'</div><div class="l">Started</div></div>'
          + '<div class="card"><div class="n">'+complete+'/'+LABS.length+'</div><div class="l">Completed</div></div>'
-         + '<div class="card"><div class="n">'+pct+'%</div><div class="l">Track progress</div></div>';
+         + cert;
   }
 
-  async function loadProgress(){
+  async function loadState(){
     var appMod=await import(FB+"firebase-app.js");
     var authMod=await import(FB+"firebase-auth.js");
-    var fsMod=await import(FB+"firebase-firestore.js");
+    var fs=await import(FB+"firebase-firestore.js");
     var app=appMod.getApp();
     var uid=authMod.getAuth(app).currentUser.uid;
-    var db=fsMod.getFirestore(app);
-    var snap=await fsMod.getDoc(fsMod.doc(db,"courseProgress",uid));
-    if(!snap.exists())return {};
-    var data=snap.data()||{};
-    return ((data.courses||{})[CP_COURSE_ID]||{}).modules||{};
+    var db=fs.getFirestore(app);
+
+    var courseObj={}, sections={};
+    try{
+      var cs=await fs.getDoc(fs.doc(db,"courseProgress",uid));
+      if(cs.exists())courseObj=((cs.data()||{}).courses||{})[CP_COURSE_ID]||{};
+    }catch(e){console.error("courseProgress read failed",e);}
+    try{
+      var ps=await fs.getDoc(fs.doc(db,"progress",uid));
+      if(ps.exists())sections=ps.data()||{};
+    }catch(e){console.error("progress read failed",e);}
+
+    var states={};
+    LABS.forEach(function(l){
+      var m=(courseObj.modules||{})[l.key]||{};
+      var idx=sections[l.pkey]||[];
+      states[l.key]={done:idx.length,complete:!!m.completedOn,completedOn:m.completedOn||""};
+    });
+    return {states:states,courseObj:courseObj};
   }
 
   window.SFAuth.mount(async function(email,signOut){
@@ -296,15 +318,18 @@ const firebaseConfig = {
     var so=document.getElementById("signout");
     if(so&&signOut)so.onclick=function(){signOut().then(function(){location.reload();});};
 
-    var mods={};
-    try{mods=await loadProgress();}
-    catch(e){console.log("[dashboard] progress unavailable:",e&&e.message);}
+    var res={states:{},courseObj:{}};
+    try{res=await loadState();}
+    catch(e){
+      console.error("[dashboard] progress unavailable:",e);
+      LABS.forEach(function(l){res.states[l.key]={done:0,complete:false,completedOn:""};});
+    }
 
-    var grid=document.getElementById("grid");
-    grid.innerHTML=LABS.map(function(l){return boxHTML(l,mods[l.key]);}).join("");
+    document.getElementById("grid").innerHTML=
+      LABS.map(function(l){return boxHTML(l,res.states[l.key]);}).join("");
 
     var ov=document.getElementById("overall");
-    ov.innerHTML=overallHTML(mods);
+    ov.innerHTML=overallHTML(res.states,res.courseObj);
     ov.style.display="flex";
   });
 })();
